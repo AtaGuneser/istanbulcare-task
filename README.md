@@ -4,7 +4,7 @@ Drag & drop tabanlı görsel sayfa oluşturucu. Sidebar'dan elementleri sürükl
 
 ## 🚀 Canlı Demo
 
-[GitHub Repository](https://istanbulcaretask.netlify.app/)
+[Deneme Linki](https://istanbulcaretask.netlify.app/)
 
 ## ✨ Özellikler
 
