@@ -8,31 +8,19 @@ export function ElementToolbar ({ elementId }: ElementToolbarProps) {
   const actions = useCanvasActions()
   const elements = useCanvasStore(state => state.elements)
   const element = elements.find(el => el.id === elementId)
-  const elementIndex = elements.findIndex(el => el.id === elementId)
 
   if (!element || !actions) return null
 
-  const handleMoveUp = () => {
-    if (elementIndex > 0 && actions) {
-      const prevElement = elements[elementIndex - 1]
-      actions.updateElement(elementId, {
-        position: { ...element.position, zIndex: prevElement.position.zIndex }
-      })
-      actions.updateElement(prevElement.id, {
-        position: { ...prevElement.position, zIndex: element.position.zIndex }
-      })
-    }
-  }
+  const handleToggleZIndex = () => {
+    if (!actions) return
 
-  const handleMoveDown = () => {
-    if (elementIndex < elements.length - 1 && actions) {
-      const nextElement = elements[elementIndex + 1]
-      actions.updateElement(elementId, {
-        position: { ...element.position, zIndex: nextElement.position.zIndex }
-      })
-      actions.updateElement(nextElement.id, {
-        position: { ...nextElement.position, zIndex: element.position.zIndex }
-      })
+    const maxZIndex = Math.max(...elements.map(el => el.position.zIndex))
+    const isAtFront = element.position.zIndex === maxZIndex
+
+    if (isAtFront) {
+      actions.sendToBack(elementId)
+    } else {
+      actions.bringToFront(elementId)
     }
   }
 
@@ -42,17 +30,11 @@ export function ElementToolbar ({ elementId }: ElementToolbarProps) {
     }
   }
 
-  const handleBringToFront = () => {
-    if (actions) {
-      actions.bringToFront(elementId)
-    }
-  }
-
-  const handleSendToBack = () => {
-    if (actions) {
-      actions.sendToBack(elementId)
-    }
-  }
+  const maxZIndex =
+    elements.length > 0
+      ? Math.max(...elements.map(el => el.position.zIndex))
+      : 1
+  const isAtFront = element.position.zIndex === maxZIndex
 
   const x = typeof element.position.x === 'number' ? element.position.x : 0
   const y = typeof element.position.y === 'number' ? element.position.y : 0
@@ -72,32 +54,11 @@ export function ElementToolbar ({ elementId }: ElementToolbarProps) {
       }}
     >
       <button
-        onClick={handleMoveUp}
-        className='p-1 hover:bg-gray-100 rounded text-blue-600'
-        title='Move Up'
-      >
-        ↑
-      </button>
-      <button
-        onClick={handleMoveDown}
-        className='p-1 hover:bg-gray-100 rounded text-gray-600'
-        title='Move Down'
-      >
-        ↓
-      </button>
-      <button
-        onClick={handleBringToFront}
+        onClick={handleToggleZIndex}
         className='p-1 hover:bg-gray-100 rounded text-purple-600'
-        title='Bring to Front'
+        title={isAtFront ? 'Send to Back' : 'Bring to Front'}
       >
-        ⬆
-      </button>
-      <button
-        onClick={handleSendToBack}
-        className='p-1 hover:bg-gray-100 rounded text-purple-600'
-        title='Send to Back'
-      >
-        ⬇
+        {isAtFront ? '⬇' : '⬆'}
       </button>
       <button
         onClick={handleDelete}

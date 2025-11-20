@@ -2,18 +2,56 @@ import type { ProjectExport } from '@/types/element.types'
 import { useCanvasStore } from '@/stores/canvas.store'
 
 /**
+ * Converts local date to ISO string with timezone offset
+ * Preserves local time instead of converting to UTC
+ */
+function getLocalISOString (): string {
+  const now = new Date()
+  const timezoneOffset = -now.getTimezoneOffset()
+  const offsetHours = Math.floor(Math.abs(timezoneOffset) / 60)
+    .toString()
+    .padStart(2, '0')
+  const offsetMinutes = (Math.abs(timezoneOffset) % 60)
+    .toString()
+    .padStart(2, '0')
+  const offsetSign = timezoneOffset >= 0 ? '+' : '-'
+  const offset = `${offsetSign}${offsetHours}:${offsetMinutes}`
+
+  const year = now.getFullYear()
+  const month = (now.getMonth() + 1).toString().padStart(2, '0')
+  const day = now.getDate().toString().padStart(2, '0')
+  const hours = now.getHours().toString().padStart(2, '0')
+  const minutes = now.getMinutes().toString().padStart(2, '0')
+  const seconds = now.getSeconds().toString().padStart(2, '0')
+  const milliseconds = now.getMilliseconds().toString().padStart(3, '0')
+
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}${offset}`
+}
+
+/**
  * Exports current canvas state to JSON format
+ * Sets created date on first export, updates lastModified on every export
  */
 export function exportToJSON (): ProjectExport {
   const state = useCanvasStore.getState()
-  const now = new Date().toISOString()
+  const now = getLocalISOString()
+
+  // If projectCreated is null, this is the first export - set created date
+  // Otherwise, keep the original created date
+  const created = state.projectCreated ?? now
+  const lastModified = now
+
+  // Update store with the current export timestamp
+  if (state.actions) {
+    state.actions.setProjectMetadata(created, lastModified)
+  }
 
   return {
     project: {
       name: 'Test Builder Layout',
       version: '1.0',
-      created: now,
-      lastModified: now
+      created,
+      lastModified
     },
     canvas: state.canvasConfig,
     elements: state.elements,
@@ -27,11 +65,17 @@ export function exportToJSON (): ProjectExport {
 
 /**
  * Imports JSON data to canvas
+ * Preserves created and lastModified dates from imported data
  */
 export function importFromJSON (data: ProjectExport): void {
   const { actions } = useCanvasStore.getState()
   actions.setElements(data.elements)
   actions.setCanvasConfig(data.canvas)
+
+  // Preserve project metadata from imported data
+  if (actions.setProjectMetadata) {
+    actions.setProjectMetadata(data.project.created, data.project.lastModified)
+  }
 }
 
 /**

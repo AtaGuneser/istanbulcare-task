@@ -13,6 +13,8 @@ type CanvasState = {
   readonly canvasConfig: CanvasConfig
   readonly isDragging: boolean
   readonly dragElementType: ElementType | null
+  readonly projectCreated: string | null
+  readonly projectLastModified: string | null
 }
 
 type CanvasActions = {
@@ -32,6 +34,10 @@ type CanvasActions = {
     setDragging: (isDragging: boolean, elementType?: ElementType | null) => void
     setElements: (elements: readonly CanvasElement[]) => void
     setCanvasConfig: (config: Partial<CanvasConfig>) => void
+    setProjectMetadata: (
+      created: string | null,
+      lastModified: string | null
+    ) => void
   }
 }
 
@@ -90,14 +96,14 @@ const getDefaultElementSize = (
 
 export const useCanvasStore = create<CanvasState & CanvasActions>(
   (set, get) => ({
-    // State
     elements: [],
     selectedElementId: null,
     canvasConfig: DEFAULT_CANVAS_CONFIG,
     isDragging: false,
     dragElementType: null,
+    projectCreated: null,
+    projectLastModified: null,
 
-    // Actions
     actions: {
       addElement: (type, position) => {
         const { elements } = get()
@@ -229,13 +235,17 @@ export const useCanvasStore = create<CanvasState & CanvasActions>(
         set(state => ({
           canvasConfig: { ...state.canvasConfig, ...config }
         }))
+      },
+
+      setProjectMetadata: (created, lastModified) => {
+        set({ projectCreated: created, projectLastModified: lastModified })
       }
     }
   })
 )
 
 /**
- * Reorders z-indexes to be sequential starting from 1
+ * Reorders z-indexes to be sequential starting from 1.
  */
 function reorderZIndexes (elements: readonly CanvasElement[]): CanvasElement[] {
   const sorted = [...elements].sort(
@@ -247,13 +257,11 @@ function reorderZIndexes (elements: readonly CanvasElement[]): CanvasElement[] {
   }))
 }
 
-// Selectors - Use primitive values to avoid reference issues
 export const useCanvasElements = () => useCanvasStore(state => state.elements)
 export const useCanvasSelectedElementId = () =>
   useCanvasStore(state => state.selectedElementId)
 export const useCanvasActions = () => {
   const actions = useCanvasStore(state => state.actions)
-  // Fallback to getState if selector returns undefined (shouldn't happen, but safety check)
   return actions ?? useCanvasStore.getState().actions
 }
 export const useCanvasConfig = () => useCanvasStore(state => state.canvasConfig)
